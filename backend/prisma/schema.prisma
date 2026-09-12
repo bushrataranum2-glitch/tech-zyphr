@@ -1,0 +1,304 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  name             String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  profile          Profile?
+  character        Character?
+  quests           Quest[]
+  completions      QuestCompletion[]
+  streak           Streak?
+  skillUnlocks     SkillUnlock[]
+  inventory        InventoryItem[]
+  transactions     Transaction[]
+  userAchievements UserAchievement[]
+  bossProgress     BossProgress[]
+  userRegions      UserRegion[]
+  notifications    Notification[]
+  aiConversations  AIConversation[]
+  aiRecommendations AIRecommendation[]
+}
+
+model Profile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  heroGender     String   @default("MALE") // MALE, FEMALE
+  heroClass      String   @default("WARRIOR") // WARRIOR, SAGE, TECHMANCER, RANGER, MAGE, CREATOR
+  avatarUrl      String?
+  bio            String?
+  selectedGoals  String   @default("[]") // JSON string of selected onboarding goals
+  initialDifficulty String @default("NORMAL")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Character {
+  id             String      @id @default(uuid())
+  userId         String      @unique
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level          Int         @default(1)
+  currentXp      Int         @default(0)
+  title          String      @default("Novice Adventurer")
+  evolutionStage String      @default("Novice") // Novice, Awakened, Specialist, Elite, Master, Legend, Mythic
+  gold           Int         @default(50)
+  crystals       Int         @default(10)
+  tokens         Int         @default(0)
+  attributes     Attributes?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Attributes {
+  id           String    @id @default(uuid())
+  characterId  String    @unique
+  character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  strength     Int       @default(10)
+  intelligence Int       @default(10)
+  dexterity    Int       @default(10)
+  wisdom       Int       @default(10)
+  charisma     Int       @default(10)
+  discipline   Int       @default(10)
+  updatedAt    DateTime  @updatedAt
+}
+
+model Quest {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  category         String            // CAREER, STUDY, FITNESS, CODING, GROWTH, CREATIVITY, DISCIPLINE
+  difficulty       String            @default("NORMAL") // EASY, NORMAL, HARD, EPIC
+  type             String            @default("DAILY")  // DAILY, MAIN, SIDE, EPIC
+  dueDate          DateTime?
+  recurrence       String            @default("NONE") // NONE, DAILY, WEEKLY
+  estimatedMinutes Int               @default(30)
+  attributeAffected String           @default("INTELLIGENCE")
+  xpReward         Int               @default(80)
+  goldReward       Int               @default(20)
+  bonusReward      String?
+  bossConnectionId String?
+  isCompleted      Boolean           @default(false)
+  completedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  completions      QuestCompletion[]
+}
+
+model QuestCompletion {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId         String
+  quest           Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  xpEarned        Int
+  goldEarned      Int
+  attributeDelta  String   // JSON string of stats awarded e.g. {"intelligence": 5, "discipline": 2}
+  bossDamageDealt Int      @default(0)
+  completedAt     DateTime @default(now())
+}
+
+model Streak {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+
+model Skill {
+  id             String        @id @default(uuid())
+  branch         String        // COMBAT, INTELLECT, WISDOM, AGILITY, CHARISMA, DISCIPLINE
+  name           String
+  description    String
+  tier           Int           @default(1)
+  requiredLevel  Int           @default(1)
+  requiredAttr   String        @default("INTELLIGENCE")
+  requiredAttrVal Int          @default(15)
+  icon           String
+  statBonus      String        // JSON string e.g. {"intelligence": 3, "discipline": 2}
+  parentId       String?
+  createdAt      DateTime      @default(now())
+  unlocks        SkillUnlock[]
+}
+
+model SkillUnlock {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId    String
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, skillId])
+}
+
+model Boss {
+  id               String         @id @default(uuid())
+  name             String
+  description      String
+  lore             String
+  maxHp            Int            @default(10000)
+  level            Int            @default(5)
+  difficulty       String         @default("HARD")
+  weaknessCategory String         // DISCIPLINE, CODING, STUDY, FITNESS, etc.
+  weaknessDesc     String
+  xpReward         Int            @default(1000)
+  goldReward       Int            @default(500)
+  crystalsReward   Int            @default(25)
+  specialReward    String?
+  imageUrl         String
+  progress         BossProgress[]
+}
+
+model BossProgress {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bossId        String
+  boss          Boss      @relation(fields: [bossId], references: [id], onDelete: Cascade)
+  currentHp     Int
+  isDefeated    Boolean   @default(false)
+  defeatedAt    DateTime?
+  timesDefeated Int       @default(0)
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, bossId])
+}
+
+model Item {
+  id          String          @id @default(uuid())
+  name        String
+  category    String          // WEAPON, ARMOR, HELMET, GLOVES, BOOTS, ACCESSORY, AURA, FRAME, BACKGROUND, CONSUMABLE
+  rarity      String          // COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC
+  price       Int
+  currency    String          @default("GOLD") // GOLD, CRYSTAL, TOKEN
+  description String
+  icon        String
+  statBonus   String          // JSON string e.g. {"intelligence": 5, "discipline": 3}
+  isEquippable Boolean        @default(true)
+  createdAt   DateTime        @default(now())
+  inventories InventoryItem[]
+}
+
+model InventoryItem {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  isEquipped Boolean  @default(false)
+  quantity   Int      @default(1)
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // EARN_QUEST, EARN_BOSS, EARN_ACHIEVEMENT, SPEND_SHOP
+  currency    String   // GOLD, CRYSTAL, TOKEN
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  category         String            // PROGRESS, CONSISTENCY, INTELLIGENCE, STRENGTH, WISDOM, SOCIAL, BOSSES, ECONOMY, RARE
+  code             String            @unique
+  name             String
+  description      String
+  criteriaType     String            // QUEST_COUNT, STREAK_DAYS, LEVEL_REACHED, BOSS_DEFEATED, GOLD_EARNED
+  criteriaValue    Int
+  crystalsReward   Int               @default(5)
+  xpReward         Int               @default(100)
+  icon             String
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model WorldRegion {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  theme       String       // TECH_CAREER, KNOWLEDGE, FITNESS, MENTAL_GROWTH, ADVANCED, ENDGAME
+  description String
+  lore        String
+  unlockLevel Int          @default(1)
+  imageUrl    String
+  userRegions UserRegion[]
+}
+
+model UserRegion {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regionId   String
+  region     WorldRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  isUnlocked Boolean     @default(false)
+  unlockedAt DateTime?
+
+  @@unique([userId, regionId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // XP_GAIN, LEVEL_UP, STREAK, ACHIEVEMENT, BOSS, SKILL, WORLD, AI_MENTOR
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AIConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // USER, ASSISTANT
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model AIRecommendation {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  reason      String
+  suggestedQuestTitle String
+  category    String
+  difficulty  String
+  attribute   String
+  xpReward    Int
+  goldReward  Int
+  createdAt   DateTime @default(now())
+}
