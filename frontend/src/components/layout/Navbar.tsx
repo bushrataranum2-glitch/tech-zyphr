@@ -17,7 +17,8 @@ import {
   X,
   Swords,
   Layers,
-  Sparkles
+  Sparkles,
+  ChevronDown
 } from "lucide-react";
 
 interface NavbarProps {
@@ -30,19 +31,26 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
   const { user, logout } = useAuth();
   const { character, unreadCount, isMuted, toggleMute } = useGame();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const navItems = [
+  const primaryNavItems = [
     { id: "dashboard", label: "Command", icon: Zap },
     { id: "quests", label: "Quests", icon: Swords },
     { id: "character", label: "Hero", icon: Shield },
     { id: "skills", label: "Skills", icon: Layers },
-    { id: "bosses", label: "Raids", icon: Sparkles },
-    { id: "world", label: "World", icon: Compass },
-    { id: "market", label: "Market", icon: ShoppingBag },
-    { id: "achievements", label: "Legends", icon: Award },
-    { id: "analytics", label: "Growth", icon: BarChart2 },
-    { id: "quest-master", label: "Quest Master", icon: Bot }
+    { id: "bosses", label: "Raids", icon: Sparkles }
   ];
+
+  const secondaryNavItems = [
+    { id: "market", label: "Market", icon: ShoppingBag },
+    { id: "world", label: "World Map", icon: Compass },
+    { id: "achievements", label: "Legends", icon: Award },
+    { id: "analytics", label: "Growth Analytics", icon: BarChart2 },
+    { id: "quest-master", label: "Quest Master AI", icon: Bot }
+  ];
+
+  const navItems = [...primaryNavItems, ...secondaryNavItems];
+  const isMoreActive = secondaryNavItems.some((item) => item.id === currentTab);
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
@@ -66,46 +74,90 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center space-x-1">
-            {navItems.map((item) => {
+          <nav className="hidden lg:flex items-center space-x-0.5">
+            {primaryNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setCurrentTab(item.id)}
-                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-cyan-50 text-cyan-700 font-semibold border border-cyan-200 shadow-sm"
+                      ? "bg-cyan-50 text-cyan-700 font-semibold border border-cyan-200/80 shadow-xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-cyan-600" : "text-slate-400"}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-cyan-600" : "text-slate-400"}`} />
                   <span>{item.label}</span>
                 </button>
               );
             })}
+
+            {/* More Menu Dropdown for Secondary Navigation */}
+            <div className="relative">
+              <button
+                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  isMoreActive
+                    ? "bg-cyan-50 text-cyan-700 font-semibold border border-cyan-200/80 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                }`}
+              >
+                <span>More</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {moreMenuOpen && (
+                <div
+                  className="absolute left-0 mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1"
+                  onMouseLeave={() => setMoreMenuOpen(false)}
+                >
+                  {secondaryNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentTab(item.id);
+                          setMoreMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium text-left transition-colors ${
+                          isActive
+                            ? "bg-cyan-50 text-cyan-700 font-semibold"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 ${isActive ? "text-cyan-600" : "text-slate-400"}`} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right Header Controls: Currencies, Audio, Notifications, Profile */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
             {/* Currencies Pill */}
             {character && (
-              <div className="hidden sm:flex items-center space-x-2 bg-slate-50 border border-slate-200/80 rounded-full px-3 py-1.5 shadow-inner">
+              <div className="hidden md:flex items-center space-x-2 bg-slate-50 border border-slate-200/80 rounded-full px-2.5 py-1 text-xs shadow-inner">
                 {/* Gold */}
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-700">
-                  <span className="text-sm">🪙</span>
+                <div className="flex items-center space-x-1 font-bold text-amber-700" title="Gold">
+                  <span>🪙</span>
                   <span>{character.gold.toLocaleString()}</span>
                 </div>
-                <div className="w-px h-3.5 bg-slate-200" />
+                <div className="w-px h-3 bg-slate-200" />
                 {/* Crystals */}
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-cyan-700">
-                  <span className="text-sm">💎</span>
+                <div className="flex items-center space-x-1 font-bold text-cyan-700" title="Crystals">
+                  <span>💎</span>
                   <span>{character.crystals.toLocaleString()}</span>
                 </div>
-                <div className="w-px h-3.5 bg-slate-200" />
+                <div className="w-px h-3 bg-slate-200" />
                 {/* Streak */}
-                <div className="flex items-center space-x-1 text-xs font-bold text-orange-600">
+                <div className="flex items-center space-x-1 font-bold text-orange-600" title="Streak">
                   <span>🔥</span>
                   <span>{character.streak?.currentStreak || 0}d</span>
                 </div>
@@ -116,20 +168,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
             <button
               onClick={toggleMute}
               title={isMuted ? "Unmute Sound" : "Mute Sound"}
-              className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
             >
-              {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-cyan-600" />}
+              {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-cyan-600" />}
             </button>
 
             {/* Notifications Button */}
             <button
               onClick={onOpenNotifications}
-              className="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              className="relative p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
               title="Notifications"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
               )}
             </button>
 
@@ -137,14 +189,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
             {character && (
               <div
                 onClick={() => setCurrentTab("character")}
-                className="cursor-pointer flex items-center space-x-2 pl-2 pr-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-sm"
+                className="cursor-pointer flex items-center space-x-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xs"
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-slate-950">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-500 flex items-center justify-center text-[9px] font-bold text-slate-950">
                   {character.level}
                 </div>
-                <div className="text-left hidden md:block">
+                <div className="text-left hidden xl:block">
                   <div className="text-xs font-semibold leading-none">{character.name}</div>
-                  <div className="text-[10px] text-cyan-300 font-mono leading-tight">{character.heroClass}</div>
+                  <div className="text-[9px] text-cyan-300 font-mono leading-tight">{character.heroClass}</div>
                 </div>
               </div>
             )}
@@ -152,7 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
             {/* Logout button */}
             <button
               onClick={logout}
-              className="hidden md:flex p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
               title="Log Out"
             >
               <LogOut className="w-4 h-4" />
@@ -161,9 +213,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
             {/* Mobile menu toggle button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="lg:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
+              title="Toggle Menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
