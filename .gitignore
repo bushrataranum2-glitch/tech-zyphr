@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+*.log
+*.db
+*.db-journal
+debug_args.txt
+powershell.exe
+wrapper.cs
+compile_and_copy.cmd
+compile_ps.cmd
+replace_ps.cmd
+.DS_Store

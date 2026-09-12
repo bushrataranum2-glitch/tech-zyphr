@@ -1,0 +1,12 @@
+{
+  "name": "questme-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "prisma:seed": "npm --prefix backend run prisma:seed"
+  }
+}
